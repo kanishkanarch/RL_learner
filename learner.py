@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import pdb
+
 import rospy
-import time
 from sensor_msgs.msg import Image
 from airsim_ros_pkgs.msg import VelCmd
 
+import random
 import cv2
 from cv_bridge import CvBridge
 import numpy as np
@@ -34,6 +35,52 @@ class reward_class:
         self.bridge = CvBridge()
         self.client = airsim.MultirotorClient()
         self.client.confirmConnection()
+        self.client.enableApiControl(True)
+        self.random_poses = [
+                (0, -1, 0, 0, 0, 0),
+                (0, -1, 0, 0, 0, np.pi/2),
+                (0, -1, 0, 0, 0, np.pi),
+                (0, -1, 0, 0, 0, -np.pi/2),
+
+                (80.5, -1, 0, 0, 0, 0),
+                (80.5, -1, 0, 0, 0, np.pi/2),
+                (80.5, -1, 0, 0, 0, np.pi),
+                (80.5, -1, 0, 0, 0, -np.pi/2),
+
+                (128.5, -1, 0, 0, 0, np.pi/2),
+                (128.5, -1, 0, 0, 0, np.pi),
+                (128.5, -1, 0, 0, 0, -np.pi/2),
+
+                (128.5, 126.5, 0, 0, 0, np.pi),
+                (128.5, 126.5, 0, 0, 0, -np.pi/2),
+
+                (0, 126.5, 0, 0, 0, 0),
+                (0, 126.5, 0, 0, 0, np.pi),
+                (0, 126.5, 0, 0, 0, -np.pi/2),
+
+                (-127.5, 126.5, 0, 0, 0, 0),
+                (-127.5, 126.5, 0, 0, 0, -np.pi/2),
+
+                (-127.5, -1, 0, 0, 0, 0),
+                (-127.5, -1, 0, 0, 0, np.pi/2),
+                (-127.5, -1, 0, 0, 0, -np.pi/2),
+
+                (-127.5, -128.5, 0, 0, 0, 0),
+                (-127.5, -128.5, 0, 0, 0, np.pi/2),
+
+                (0, -128.5, 0, 0, 0, 0),
+                (0, -128.5, 0, 0, 0, np.pi/2),
+                (0, -128.5, 0, 0, 0, np.pi),
+
+                (80.5, -128.5, 0, 0, 0, 0),
+                (80.5, -128.5, 0, 0, 0, np.pi/2),
+                (80.5, -128.5, 0, 0, 0, np.pi),
+
+                (128.5, -128.5, 0, 0, 0, np.pi/2),
+                (128.5, -128.5, 0, 0, 0, np.pi),
+
+
+]
 
     def seg_cb(self, msg):
         self.seg_in = msg
@@ -49,8 +96,20 @@ class reward_class:
 
     def reset_env(self):
         self.reset_count += 1
-        print("Resetting environment: ", self.reset_count, end = "         \r")
         self.client.reset()
+        rndm_i = random.randint(0, len(self.random_poses)-1)
+        pose = airsim.Pose(airsim.Vector3r(
+            self.random_poses[rndm_i][0],
+            self.random_poses[rndm_i][1],
+            self.random_poses[rndm_i][2]
+            ),
+            airsim.to_quaternion(
+            self.random_poses[rndm_i][3],
+            self.random_poses[rndm_i][4],
+            self.random_poses[rndm_i][5]
+            )
+        )
+        self.client.simSetVehiclePose(pose, True, "SimpleFlight")
         self.client.enableApiControl(True)
         self.seg_in = rospy.wait_for_message("/airsim_node/SimpleFlight/segmentation/Segmentation", Image, timeout=None)
 
@@ -86,7 +145,7 @@ class reward_class:
         while not rospy.is_shutdown():
             reward = self.calculate_reward()
             self.observation()
-            print("IOU score: ", "{:.2f}".format(reward), end="         \r")
+            print("IOU score: ", "{:.2f}".format(reward), "reset count: ", self.reset_count, end="         \r")
             if reward == 0:
                 self.reset_env()
 
