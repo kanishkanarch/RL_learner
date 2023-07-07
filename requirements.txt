@@ -1,0 +1,5 @@
+numpy
+airsim
+cv2
+torch
+torchvision
