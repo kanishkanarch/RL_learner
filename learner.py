@@ -19,6 +19,27 @@ rospy.init_node("copy_node")
 
 class reward_class:
     def __init__(self):
+        self.client = airsim.MultirotorClient()
+        self.client.confirmConnection()
+        self.client.enableApiControl(True)
+        self.client.reset()
+        prev_time = rospy.get_time()
+        print("Resetting...")
+        while rospy.get_time() < prev_time + 3:
+            pass
+        self.client.enableApiControl(True)
+        self.client.armDisarm(True)
+
+        prev_time = rospy.get_time()
+        print("Arming...")
+        while rospy.get_time() < prev_time + 5:
+            pass
+        self.client.takeoffAsync()
+        prev_time = rospy.get_time()
+        print("Taking off...")
+        while rospy.get_time() < prev_time + 5:
+            pass
+
         self.random_poses = [
                 #(0, -1, 0)
                 (0, -1, 0, 0, 0, 0),
@@ -87,34 +108,16 @@ class reward_class:
         self.prev_img = Image()
 
         self.bridge = CvBridge()
-        self.client = airsim.MultirotorClient()
-        self.client.confirmConnection()
-        self.client.enableApiControl(True)
-        self.client.reset()
-        prev_time = rospy.get_time()
-        print("Resetting...")
-        while rospy.get_time() < prev_time + 3:
-            pass
-        self.client.enableApiControl(True)
-        self.client.armDisarm(True)
-
-        prev_time = rospy.get_time()
-        print("Arming...")
-        while rospy.get_time() < prev_time + 5:
-            pass
-        self.client.takeoffAsync()
-        prev_time = rospy.get_time()
-        print("Taking off...")
-        while rospy.get_time() < prev_time + 5:
-            pass
-
 
         self.state_actions = np.array([-0.5, 0, 0.5])
-        self.q_values = np.array([
-                    [0, 0, 0], # Left
-                    [0, 0, 0], # Straight
-                    [0, 0, 0]  # Right
-                ])
+#        self.q_values = np.array([
+#                    [0, 0, 0], # Left
+#                    [0, 0, 0], # Straight
+#                    [0, 0, 0]  # Right
+#                ])
+        self.q_values = np.random.rand(3,3)
+        self.target_policy_values = np.argmax(self.q_values, axis=1)
+        self.behavior_policy_values = np.array([random.randint(0,2), random.randint(0,2)]) #Random probabilities for each (St,At) pair
         self.epsilon = 0.05
         self.gamma = 0.1
         self.incremental_reward = 0
