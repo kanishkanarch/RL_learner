@@ -84,6 +84,11 @@ class reward_class:
 
     def seg_cb(self, msg):
         self.seg_in = msg
+        img = self.bridge.imgmsg_to_cv2(self.seg_in, desired_encoding="rgb8")
+        print("RGB: ", img[img.shape[0]-1, int((img.shape[1]-1)/2)], end = "        \r")
+        # [121, 67, 28]
+        # [190, 225, 64]
+        # [48, 188, 172]
 
     def color_cb(self, msg):
         self.color_in = msg
@@ -143,11 +148,12 @@ class reward_class:
     def learn(self):
         self.seg_in = rospy.wait_for_message("/airsim_node/SimpleFlight/segmentation/Segmentation", Image, timeout=None)
         while not rospy.is_shutdown():
-            reward = self.calculate_reward()
-            self.observation()
-            print("IOU score: ", "{:.2f}".format(reward), "reset count: ", self.reset_count, end="         \r")
-            if reward == 0:
-                self.reset_env()
+            pass
+#            reward = self.calculate_reward()
+#            self.observation()
+#            print("IOU score: ", "{:.2f}".format(reward), "reset count: ", self.reset_count, end="         \r")
+#            if reward == 0:
+#                self.reset_env()
 
 
             
